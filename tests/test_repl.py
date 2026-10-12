@@ -1,10 +1,10 @@
 """REPL slash commands: the dispatch loop itself, driven with scripted input."""
 
-from corecoder import Agent, checkpoints
-from corecoder import session as session_module
-from corecoder.demo import ScriptedLLM
-from corecoder.llm import LLMResponse
-from corecoder.tools import edit as edit_module
+from nanocoder import Agent, checkpoints
+from nanocoder import session as session_module
+from nanocoder.demo import ScriptedLLM
+from nanocoder.llm import LLMResponse
+from nanocoder.tools import edit as edit_module
 from tests.conftest import repl_with
 
 

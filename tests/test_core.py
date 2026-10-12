@@ -10,10 +10,10 @@ from unittest import mock
 import pytest
 from openai import BadRequestError
 
-from corecoder import ALL_TOOLS, LLM, Agent, Config, __version__
-from corecoder import session as session_module
-from corecoder.context import ContextManager, estimate_tokens
-from corecoder.session import list_sessions, load_session, save_session
+from nanocoder import ALL_TOOLS, LLM, Agent, Config, __version__
+from nanocoder import session as session_module
+from nanocoder.context import ContextManager, estimate_tokens
+from nanocoder.session import list_sessions, load_session, save_session
 from tests.conftest import get_tool
 
 
@@ -30,11 +30,11 @@ def test_readme_line_counts_are_current():
     # alarm: update the badge and the prose in README.md and README_CN.md.
     root = Path(__file__).resolve().parent.parent
     engine_files = [
-        root / "corecoder" / name
+        root / "nanocoder" / name
         for name in ("agent.py", "llm.py", "context.py", "session.py")
     ]
-    engine_files += sorted((root / "corecoder" / "tools").glob("*.py"))
-    package_files = sorted((root / "corecoder").rglob("*.py"))
+    engine_files += sorted((root / "nanocoder" / "tools").glob("*.py"))
+    package_files = sorted((root / "nanocoder").rglob("*.py"))
 
     def net_lines(path: Path) -> int:
         return sum(
@@ -63,16 +63,16 @@ def test_doc_python_line_references_are_current():
     # that grows a file rings here instead of lying in the docs.
     root = Path(__file__).resolve().parent.parent
     ref_re = re.compile(
-        r"((?:corecoder/)?(?:tools/)?[a-z_]+\.py)[^()\n]{0,25}?(\d+)\s*(?:lines|行)(?!\s*(?:上下|多|来))"
+        r"((?:nanocoder/)?(?:tools/)?[a-z_]+\.py)[^()\n]{0,25}?(\d+)\s*(?:lines|行)(?!\s*(?:上下|多|来))"
     )
     actual = {
         # POSIX form so the forward-slash references resolve on Windows too
         p.relative_to(root).as_posix(): len(p.read_text(encoding="utf-8").splitlines())
-        for p in (root / "corecoder").rglob("*.py")
+        for p in (root / "nanocoder").rglob("*.py")
     }
 
     def resolve(ref: str) -> int | None:
-        for candidate in (ref, f"corecoder/{ref}", f"corecoder/tools/{ref.rsplit('/', 1)[-1]}"):
+        for candidate in (ref, f"nanocoder/{ref}", f"nanocoder/tools/{ref.rsplit('/', 1)[-1]}"):
             if candidate in actual:
                 return actual[candidate]
         return None
@@ -106,15 +106,15 @@ def test_public_api_exports():
 
 
 def test_config_from_env(monkeypatch):
-    monkeypatch.setenv("CORECODER_MODEL", "test-model")
+    monkeypatch.setenv("NANOCODER_MODEL", "test-model")
     c = Config.from_env()
     assert c.model == "test-model"
 
 
 def test_config_defaults(monkeypatch):
     # clear relevant env vars without leaking the change into other tests
-    monkeypatch.delenv("CORECODER_MODEL", raising=False)
-    monkeypatch.delenv("CORECODER_MAX_TOKENS", raising=False)
+    monkeypatch.delenv("NANOCODER_MODEL", raising=False)
+    monkeypatch.delenv("NANOCODER_MAX_TOKENS", raising=False)
 
     c = Config.from_env()
     assert c.model == "gpt-5.5"
@@ -132,7 +132,7 @@ def test_estimate_tokens():
 
 
 def test_estimate_tokens_tiered_by_content():
-    from corecoder.context import _approx_tokens
+    from nanocoder.context import _approx_tokens
 
     prose = "The quick brown fox jumps over the lazy dog. " * 10  # 460 prose chars
     cjk = "你好世界，这是一段中文。" * 20  # 260 hanzi-ish chars
@@ -235,7 +235,7 @@ def test_list_sessions():
 # --- Cost estimation ---
 
 def test_cost_estimation_known_model():
-    from corecoder.llm import LLM
+    from nanocoder.llm import LLM
     llm = LLM.__new__(LLM)
     llm.model = "gpt-5.4"
     llm.total_prompt_tokens = 1_000_000
@@ -245,7 +245,7 @@ def test_cost_estimation_known_model():
     assert cost == 2.5 + 7.5  # $2.5/M in + $15/M out * 0.5M
 
 def test_cost_estimation_kimi_k3():
-    from corecoder.llm import LLM
+    from nanocoder.llm import LLM
     llm = LLM.__new__(LLM)
     llm.model = "kimi-k3"
     llm.total_prompt_tokens = 1_000_000
@@ -256,7 +256,7 @@ def test_cost_estimation_kimi_k3():
 
 
 def test_cost_estimation_unknown_model():
-    from corecoder.llm import LLM
+    from nanocoder.llm import LLM
     llm = LLM.__new__(LLM)
     llm.model = "some-custom-model"
     llm.total_prompt_tokens = 1000
@@ -265,7 +265,7 @@ def test_cost_estimation_unknown_model():
 
 
 def _llm_at(model, prompt_tokens=1_000_000, completion_tokens=500_000):
-    from corecoder.llm import LLM
+    from nanocoder.llm import LLM
     llm = LLM.__new__(LLM)
     llm.model = model
     llm.total_prompt_tokens = prompt_tokens
@@ -274,7 +274,7 @@ def _llm_at(model, prompt_tokens=1_000_000, completion_tokens=500_000):
 
 
 def test_pricing_json_overrides_and_extends_the_builtin_table(monkeypatch, tmp_path):
-    from corecoder import llm as llm_module
+    from nanocoder import llm as llm_module
     custom = tmp_path / "pricing.json"
     custom.write_text(
         json.dumps({"gpt-5.4": [100, 200], "my-own-model": [1, 2]}), encoding="utf-8"
@@ -287,7 +287,7 @@ def test_pricing_json_overrides_and_extends_the_builtin_table(monkeypatch, tmp_p
 
 @pytest.mark.parametrize("content", ["{not json", '{"gpt-5.4": "cheap"}', '[1, 2]'])
 def test_a_broken_pricing_json_falls_back_to_the_builtin_table(monkeypatch, tmp_path, content):
-    from corecoder import llm as llm_module
+    from nanocoder import llm as llm_module
     broken = tmp_path / "pricing.json"
     broken.write_text(content, encoding="utf-8")
     monkeypatch.setattr(llm_module, "PRICING_FILE", broken)
@@ -298,7 +298,7 @@ def test_a_broken_pricing_json_falls_back_to_the_builtin_table(monkeypatch, tmp_
 # --- Changed files tracking ---
 
 def test_edit_tracks_changed_files(tmp_path):
-    from corecoder.tools.edit import _changed_files
+    from nanocoder.tools.edit import _changed_files
     _changed_files.clear()
     edit = get_tool("edit_file")
     path = tmp_path / "sample.py"
@@ -309,7 +309,7 @@ def test_edit_tracks_changed_files(tmp_path):
 
 
 def test_write_tracks_changed_files(tmp_path):
-    from corecoder.tools.edit import _changed_files
+    from nanocoder.tools.edit import _changed_files
     _changed_files.clear()
     write = get_tool("write_file")
     path = tmp_path / "tracked.txt"
@@ -323,7 +323,7 @@ def test_write_tracks_changed_files(tmp_path):
 def test_parallel_bash_calls_inherit_and_merge_session_cwd(tmp_path):
     """Pool workers must start from the session cwd, not the launch dir, and a
     cd inside the batch moves the session cwd afterwards."""
-    from corecoder.tools.bash import get_tracked_cwd, set_tracked_cwd
+    from nanocoder.tools.bash import get_tracked_cwd, set_tracked_cwd
 
     def norm_dir(s: str) -> str:
         # pwd prints the shell's own form: git-bash gives /c/Users/... where
@@ -381,9 +381,9 @@ def test_parallel_edits_to_one_file_both_land(tmp_path):
 
 def test_sub_agent_cwd_does_not_leak_into_parent(tmp_path, monkeypatch):
     """A sub-agent's own cd must not move the parent's tracked cwd."""
-    from corecoder.agent import Agent as CoreAgent
-    from corecoder.tools.agent import AgentTool
-    from corecoder.tools.bash import get_tracked_cwd, set_tracked_cwd
+    from nanocoder.agent import Agent as CoreAgent
+    from nanocoder.tools.agent import AgentTool
+    from nanocoder.tools.bash import get_tracked_cwd, set_tracked_cwd
 
     parent = Agent(llm=LLM.__new__(LLM), tools=[])
     tool = AgentTool()
@@ -407,7 +407,7 @@ def test_sub_agent_cwd_does_not_leak_into_parent(tmp_path, monkeypatch):
 
 def test_reset_clears_todo_list():
     """/reset must drop the dead conversation's checklist from the system prompt."""
-    from corecoder.tools.todo import TodoWriteTool
+    from nanocoder.tools.todo import TodoWriteTool
 
     todo = TodoWriteTool()
     agent = Agent(llm=LLM.__new__(LLM), tools=[todo])
@@ -434,7 +434,7 @@ def test_agent_tool_scope_is_per_instance():
 
 def test_exec_tool_distinguishes_bad_args_from_internal_error():
     """A TypeError raised inside a tool must not be reported as bad arguments."""
-    from corecoder.tools.base import Tool
+    from nanocoder.tools.base import Tool
 
     class _Boom(Tool):
         name = "boom"
@@ -480,7 +480,7 @@ def test_interrupt_backfills_missing_tool_replies():
 
 def test_todo_list_is_injected_into_system_context():
     """After a todo_write call, the next request must carry the list in the system message."""
-    from corecoder.tools.todo import TodoWriteTool
+    from nanocoder.tools.todo import TodoWriteTool
     todo = TodoWriteTool()
     agent = Agent(llm=LLM.__new__(LLM), tools=[todo])
 
@@ -496,7 +496,7 @@ def test_todo_list_is_injected_into_system_context():
 
 def test_todo_injection_tracks_updates():
     """The injection is rebuilt every round: updates show, an empty list injects nothing."""
-    from corecoder.tools.todo import TodoWriteTool
+    from nanocoder.tools.todo import TodoWriteTool
     todo = TodoWriteTool()
     agent = Agent(llm=LLM.__new__(LLM), tools=[todo])
 
@@ -764,7 +764,7 @@ class TestMidStreamRetry:
             _DyingStream(self._connection_error()),
             self._good_stream(),
         ]
-        with mock.patch("corecoder.llm.time.sleep"):
+        with mock.patch("nanocoder.llm.time.sleep"):
             result = llm.chat(messages=[{"role": "user", "content": "hi"}])
         assert result.content == "full"
         assert create.call_count == 2
@@ -779,7 +779,7 @@ class TestMidStreamRetry:
             _DyingStream(self._server_error()),
             self._good_stream(),
         ]
-        with mock.patch("corecoder.llm.time.sleep"):
+        with mock.patch("nanocoder.llm.time.sleep"):
             result = llm.chat(messages=[{"role": "user", "content": "hi"}])
         assert result.content == "full"
         assert create.call_count == 2
@@ -802,6 +802,6 @@ class TestMidStreamRetry:
         ]
         from openai import APIConnectionError
 
-        with mock.patch("corecoder.llm.time.sleep"), pytest.raises(APIConnectionError):
+        with mock.patch("nanocoder.llm.time.sleep"), pytest.raises(APIConnectionError):
             llm.chat(messages=[{"role": "user", "content": "hi"}])
         assert create.call_count == 3

@@ -11,13 +11,13 @@ from pathlib import Path
 
 import pytest
 
-from corecoder import mcp
-from corecoder.agent import Agent
-from corecoder.demo import ScriptedLLM
-from corecoder.hooks import Hooks
-from corecoder.llm import LLMResponse, ToolCall
-from corecoder.mcp import MCPError, load_mcp_tools
-from corecoder.permissions import Permission
+from nanocoder import mcp
+from nanocoder.agent import Agent
+from nanocoder.demo import ScriptedLLM
+from nanocoder.hooks import Hooks
+from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.mcp import MCPError, load_mcp_tools
+from nanocoder.permissions import Permission
 from tests.conftest import repl_with
 
 FAKE_SERVER = """

@@ -1,10 +1,10 @@
 """Plan mode: read-only investigation, then a plan the user approves."""
 
-from corecoder import Agent
-from corecoder.demo import ScriptedLLM
-from corecoder.llm import LLMResponse, ToolCall
-from corecoder.permissions import Permission
-from corecoder.tools.write import WriteFileTool
+from nanocoder import Agent
+from nanocoder.demo import ScriptedLLM
+from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.permissions import Permission
+from nanocoder.tools.write import WriteFileTool
 from tests.conftest import get_tool, repl_with
 
 

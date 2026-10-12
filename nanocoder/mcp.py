@@ -1,6 +1,6 @@
 """MCP stdio client, distilled to the slice of the protocol an agent uses.
 
-Servers are configured in ~/.corecoder/mcp.json:
+Servers are configured in ~/.nanocoder/mcp.json:
 
     {"mcpServers": {"fs": {"command": "npx", "args": ["-y", "some-fs-server", "/tmp"]}}}
 
@@ -26,7 +26,7 @@ from .tools.base import Tool
 
 log = logging.getLogger(__name__)
 
-CONFIG_FILE = Path.home() / ".corecoder" / "mcp.json"
+CONFIG_FILE = Path.home() / ".nanocoder" / "mcp.json"
 PROTOCOL_VERSION = "2025-06-18"
 INIT_TIMEOUT = 15  # seconds for initialize + tools/list at startup
 CALL_TIMEOUT = 60  # seconds for one tools/call
@@ -76,7 +76,7 @@ class MCPClient:
             self._request("initialize", {
                 "protocolVersion": PROTOCOL_VERSION,
                 "capabilities": {},
-                "clientInfo": {"name": "corecoder", "version": __version__},
+                "clientInfo": {"name": "nanocoder", "version": __version__},
             }, INIT_TIMEOUT)
             self._notify("notifications/initialized")
             listed = self._request("tools/list", {}, INIT_TIMEOUT)

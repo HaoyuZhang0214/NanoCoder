@@ -2,7 +2,7 @@
 
 Each mechanism has its own test file. This file pins the interactions, the
 places where two policies meet and the order between them decides what the
-model is told. These combinations are the part of CoreCoder that must never
+model is told. These combinations are the part of Nanocoder that must never
 be wrong, because it is where readers copy the pattern from.
 """
 
@@ -11,14 +11,14 @@ from typing import ClassVar
 
 import pytest
 
-from corecoder import Agent
-from corecoder.demo import ScriptedLLM
-from corecoder.hooks import Hooks
-from corecoder.llm import LLMResponse, ToolCall
-from corecoder.permissions import Permission
-from corecoder.tools.base import Tool
-from corecoder.tools.grep import GrepTool
-from corecoder.tools.write import WriteFileTool
+from nanocoder import Agent
+from nanocoder.demo import ScriptedLLM
+from nanocoder.hooks import Hooks
+from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.permissions import Permission
+from nanocoder.tools.base import Tool
+from nanocoder.tools.grep import GrepTool
+from nanocoder.tools.write import WriteFileTool
 
 
 def _write_call(call_id, path):

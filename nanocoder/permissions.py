@@ -4,7 +4,7 @@ The tools split in two. Read-only ones (read_file, glob, grep, todo_write)
 run the moment the model asks; the mutating ones (edit_file, write_file,
 bash, and spawning a sub-agent) stop for a yes first. "Always allow" is
 remembered per tool, and the REPL passes a persist_path so the grant also
-survives restarts via ~/.corecoder/permissions.json. Per tool rather than
+survives restarts via ~/.nanocoder/permissions.json. Per tool rather than
 per command, because one approved bash prefix says nothing about the next
 command anyway.
 
@@ -17,7 +17,7 @@ the loop survives and the model can route around it.
 import json
 from pathlib import Path
 
-DEFAULT_STORE = Path.home() / ".corecoder" / "permissions.json"
+DEFAULT_STORE = Path.home() / ".nanocoder" / "permissions.json"
 
 
 class Permission:

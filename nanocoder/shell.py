@@ -2,7 +2,7 @@
 
 On macOS/Linux `shell=True` already means /bin/sh. On Windows it means
 cmd.exe, where pwd, ls, cat, sleep and friends do not exist. Every shell
-spawn in CoreCoder goes through here so Windows gets Git Bash instead.
+spawn in NanoCoder goes through here so Windows gets Git Bash instead.
 """
 
 import os

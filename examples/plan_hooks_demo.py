@@ -18,11 +18,11 @@ from rich.panel import Panel
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from corecoder.agent import Agent
-from corecoder.cli import _brief
-from corecoder.demo import ScriptedLLM
-from corecoder.hooks import Hooks
-from corecoder.llm import LLMResponse, ToolCall
+from nanocoder.agent import Agent
+from nanocoder.cli import _brief
+from nanocoder.demo import ScriptedLLM
+from nanocoder.hooks import Hooks
+from nanocoder.llm import LLMResponse, ToolCall
 
 console = Console()
 
@@ -107,12 +107,12 @@ def _script(workdir: Path) -> list[LLMResponse]:
 
 
 def run() -> int:
-    workdir = Path(tempfile.mkdtemp(prefix="corecoder-demo-"))
+    workdir = Path(tempfile.mkdtemp(prefix="nanocoder-demo-"))
     (workdir / "fib.py").write_text(FIB_PY, encoding="utf-8")
     agent = Agent(llm=ScriptedLLM(_script(workdir)), hooks=DemoHooks())
     agent.plan_mode = True
 
-    console.print(Panel.fit(f"[bold]{TASK}[/]", title="corecoder demo · plan mode + hooks (offline)"))
+    console.print(Panel.fit(f"[bold]{TASK}[/]", title="nanocoder demo · plan mode + hooks (offline)"))
     console.print("[dim]plan mode ON — mutating tools are refused until the plan is approved[/]")
 
     plan = agent.chat(

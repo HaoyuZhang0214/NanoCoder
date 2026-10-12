@@ -1,11 +1,11 @@
 """Consent gating for mutating tools: the Permission layer and its wiring."""
 
-from corecoder import Agent
-from corecoder.demo import ScriptedLLM
-from corecoder.llm import LLMResponse, ToolCall
-from corecoder.permissions import Permission
-from corecoder.tools.agent import AgentTool
-from corecoder.tools.write import WriteFileTool
+from nanocoder import Agent
+from nanocoder.demo import ScriptedLLM
+from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.permissions import Permission
+from nanocoder.tools.agent import AgentTool
+from nanocoder.tools.write import WriteFileTool
 from tests.conftest import get_tool
 
 
@@ -182,13 +182,13 @@ def test_sub_agent_inherits_the_permission_layer(tmp_path):
 # --- the CLI side of the layer ---
 
 def test_yes_flag_parses(monkeypatch):
-    from corecoder.cli import _parse_args
-    monkeypatch.setattr("sys.argv", ["corecoder", "--yes"])
+    from nanocoder.cli import _parse_args
+    monkeypatch.setattr("sys.argv", ["nanocoder", "--yes"])
     assert _parse_args().yes
 
 
 def test_ask_prompt_maps_answers(monkeypatch):
-    from corecoder import cli
+    from nanocoder import cli
     answers = iter(["y", "a", "n", "garbage"])
     monkeypatch.setattr(cli, "pt_prompt", lambda *a, **k: next(answers))
 
@@ -199,7 +199,7 @@ def test_ask_prompt_maps_answers(monkeypatch):
 
 
 def test_ask_prompt_eof_denies(monkeypatch):
-    from corecoder import cli
+    from nanocoder import cli
 
     def eof(*a, **k):
         raise EOFError

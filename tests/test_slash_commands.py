@@ -1,9 +1,9 @@
 """Slash-command dispatch in the REPL: each command must act and stay silent-proof."""
 
-import corecoder.session as session_module
-from corecoder import Agent, checkpoints
-from corecoder.demo import ScriptedLLM
-from corecoder.llm import LLMResponse
+import nanocoder.session as session_module
+from nanocoder import Agent, checkpoints
+from nanocoder.demo import ScriptedLLM
+from nanocoder.llm import LLMResponse
 from tests.conftest import repl_with
 
 
@@ -81,7 +81,7 @@ def test_sessions_with_none_saved_reports_none(monkeypatch, capsys, tmp_path):
 
 
 def test_diff_with_no_edits_reports_none(monkeypatch, capsys):
-    monkeypatch.setattr("corecoder.tools.edit._changed_files", set())
+    monkeypatch.setattr("nanocoder.tools.edit._changed_files", set())
     agent = _agent()
 
     repl_with(monkeypatch, agent, ["/diff", "quit"])
@@ -90,7 +90,7 @@ def test_diff_with_no_edits_reports_none(monkeypatch, capsys):
 
 
 def test_diff_lists_modified_files(monkeypatch, capsys):
-    monkeypatch.setattr("corecoder.tools.edit._changed_files", {"src/a.py"})
+    monkeypatch.setattr("nanocoder.tools.edit._changed_files", {"src/a.py"})
     agent = _agent()
 
     repl_with(monkeypatch, agent, ["/diff", "quit"])

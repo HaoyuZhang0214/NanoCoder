@@ -5,8 +5,8 @@ from unittest import mock
 
 import pytest
 
-from corecoder.config import Config
-from corecoder.llm import LLM, LiteLLM, LLMResponse
+from nanocoder.config import Config
+from nanocoder.llm import LLM, LiteLLM, LLMResponse
 
 # ---------------------------------------------------------------------------
 # Fake streaming response (matches OpenAI stream chunk format)
@@ -208,12 +208,12 @@ class TestConfigProvider:
         assert config.provider == "openai"
 
     def test_provider_from_env(self):
-        with mock.patch.dict("os.environ", {"CORECODER_PROVIDER": "litellm"}, clear=False):
+        with mock.patch.dict("os.environ", {"NANOCODER_PROVIDER": "litellm"}, clear=False):
             config = Config.from_env()
             assert config.provider == "litellm"
 
     def test_cli_picks_litellm_class(self):
-        from corecoder.llm import LiteLLM
+        from nanocoder.llm import LiteLLM
         config = Config(provider="litellm", model="anthropic/claude-3-haiku", api_key="k")
         llm_cls = LiteLLM if config.provider == "litellm" else LLM
         assert llm_cls is LiteLLM

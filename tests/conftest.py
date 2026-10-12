@@ -2,14 +2,14 @@
 
 import pytest
 
-from corecoder import Config, checkpoints, cli
-from corecoder import llm as llm_module
-from corecoder.tools import ALL_TOOLS
+from nanocoder import Config, checkpoints, cli
+from nanocoder import llm as llm_module
+from nanocoder.tools import ALL_TOOLS
 
 
 @pytest.fixture(autouse=True)
 def _checkpoints_isolated(tmp_path, monkeypatch):
-    """Checkpoint persistence must never touch the real ~/.corecoder."""
+    """Checkpoint persistence must never touch the real ~/.nanocoder."""
     monkeypatch.setattr(checkpoints, "CHECKPOINTS_FILE", tmp_path / "checkpoints.json")
     checkpoints.clear()
     yield
@@ -18,7 +18,7 @@ def _checkpoints_isolated(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _pricing_isolated(tmp_path, monkeypatch):
-    """Cost estimates must never read the real ~/.corecoder/pricing.json."""
+    """Cost estimates must never read the real ~/.nanocoder/pricing.json."""
     monkeypatch.setattr(llm_module, "PRICING_FILE", tmp_path / "pricing.json")
 
 

@@ -2,7 +2,7 @@
 
 edit_file and write_file record a checkpoint before touching a file; /undo
 pops the latest one and restores the previous bytes (or removes the file if
-it did not exist). The stack persists to ~/.corecoder/checkpoints.json so
+it did not exist). The stack persists to ~/.nanocoder/checkpoints.json so
 /undo still reaches back into earlier sessions after a restart. Bash side
 effects are not tracked, only the two file-writing tools.
 """
@@ -11,7 +11,7 @@ import base64
 import json
 from pathlib import Path
 
-CHECKPOINTS_FILE = Path.home() / ".corecoder" / "checkpoints.json"
+CHECKPOINTS_FILE = Path.home() / ".nanocoder" / "checkpoints.json"
 
 # (path, prior bytes or None if the file did not exist)
 _stack: list[tuple[str, bytes | None]] = []

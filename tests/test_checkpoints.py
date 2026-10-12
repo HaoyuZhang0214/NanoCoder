@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from corecoder import checkpoints
-from corecoder.tools.edit import EditFileTool
-from corecoder.tools.write import WriteFileTool
+from nanocoder import checkpoints
+from nanocoder.tools.edit import EditFileTool
+from nanocoder.tools.write import WriteFileTool
 
 
 def _simulate_restart():

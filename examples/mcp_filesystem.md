@@ -1,13 +1,13 @@
 # MCP example: a filesystem server over stdio
 
 The smallest useful `mcp.json`: the MCP org's reference filesystem server,
-scoped to the directory you launch CoreCoder from. The agent gains
+scoped to the directory you launch NanoCoder from. The agent gains
 `mcp__fs__*` tools (read/write/list inside that one directory) while
-CoreCoder's own consent gate and hooks keep applying to every call.
+NanoCoder's own consent gate and hooks keep applying to every call.
 
 ## Use it
 
-Merge the entry into `~/.corecoder/mcp.json` (create the file if it does not
+Merge the entry into `~/.nanocoder/mcp.json` (create the file if it does not
 exist; if you already have servers, add `"fs"` next to them):
 
 ```json
@@ -26,10 +26,10 @@ package, which can outlast the 15-second handshake budget; if `/mcp` shows
 the server as dead on first run, `/mcp reconnect fs` picks it up once the
 npx cache is warm, and every later start is fast.
 
-The `"."` argument is resolved by the server itself, so launch CoreCoder
+The `"."` argument is resolved by the server itself, so launch NanoCoder
 from the directory you want exposed. To expose a fixed tree instead, put an
 absolute path there. Anything outside the listed directories is refused by
-the server, not by CoreCoder.
+the server, not by NanoCoder.
 
 ## What you should see
 

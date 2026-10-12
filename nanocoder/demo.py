@@ -88,10 +88,10 @@ def _script(workdir: Path) -> list[LLMResponse]:
 
 
 def run_demo() -> int:
-    workdir = Path(tempfile.mkdtemp(prefix="corecoder-demo-"))
+    workdir = Path(tempfile.mkdtemp(prefix="nanocoder-demo-"))
     agent = Agent(llm=ScriptedLLM(_script(workdir)))
 
-    console.print(Panel.fit(f"[bold]{_TASK}[/]", title="corecoder demo (offline)"))
+    console.print(Panel.fit(f"[bold]{_TASK}[/]", title="nanocoder demo (offline)"))
     result = agent.chat(
         _TASK,
         on_tool=lambda name, args: console.print(f"[cyan]tool:[/] {name} {_brief(args)}"),
