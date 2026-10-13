@@ -1,5 +1,3 @@
-<div align="center">
-
 # NanoCoder
 
 **编程 agent 里的 nanoGPT。**
