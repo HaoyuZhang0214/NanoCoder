@@ -1,8 +1,5 @@
 # NanoCoder
 
-**编程 agent 里的 nanoGPT。**
-
-
 ```bash
 git clone https://github.com/HaoyuZhang0214/NanoCoder
 cd NanoCoder

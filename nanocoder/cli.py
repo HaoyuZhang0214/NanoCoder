@@ -37,9 +37,6 @@ def _parse_args():
     p.add_argument("--yes", action="store_true", help="Auto-approve every tool call (for scripts and CI)")
     p.add_argument("--demo", action="store_true", help="Run the offline scripted demo (no API key needed)")
     p.add_argument("-r", "--resume", metavar="ID", help="Resume a saved session")
-    p.add_argument("--use-langgraph", action="store_true", help="Use LangGraph-based agent (requires langgraph)")
-    p.add_argument("--checkpoint-backend", choices=["memory", "sqlite"], default="memory", help="Checkpoint backend for LangGraph agent (default: memory)")
-    p.add_argument("--thread-id", help="Thread ID for LangGraph checkpoint (auto-generated if not specified)")
     p.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
     return p.parse_args()
 
@@ -92,43 +89,13 @@ def main():
         permission = Permission()
     else:
         permission = Permission(ask=_ask_permission, persist_path=DEFAULT_STORE)
-    
-    # Choose agent implementation
-    if args.use_langgraph:
-        # LangGraph-based agent with graph orchestration
-        try:
-            from .langgraph_agent import LangGraphAgent
-            from .langgraph_checkpointer import get_checkpointer
-            
-            checkpointer = get_checkpointer(
-                backend=args.checkpoint_backend,
-                db_path=None  # Will use env var or default path
-            )
-            
-            agent = LangGraphAgent(
-                llm=llm,
-                tools=[*ALL_TOOLS, *load_mcp_tools()],
-                max_context_tokens=config.max_context_tokens,
-                permission=permission,
-                hooks=load_hooks(),
-                checkpointer=checkpointer,
-                thread_id=args.thread_id,
-                enable_parallel=True,
-            )
-            console.print("[dim]Using LangGraph agent (graph-driven orchestration)[/dim]")
-        except ImportError as e:
-            console.print(f"[red]LangGraph agent requires langgraph package: {e}[/red]")
-            console.print("[yellow]Install with: pip install langgraph[/yellow]")
-            sys.exit(1)
-    else:
-        # Traditional while-loop agent (default)
-        agent = Agent(
-            llm=llm,
-            tools=[*ALL_TOOLS, *load_mcp_tools()],
-            max_context_tokens=config.max_context_tokens,
-            permission=permission,
-            hooks=load_hooks(),
-        )
+    agent = Agent(
+        llm=llm,
+        tools=[*ALL_TOOLS, *load_mcp_tools()],
+        max_context_tokens=config.max_context_tokens,
+        permission=permission,
+        hooks=load_hooks(),
+    )
 
     # resume saved session
     if args.resume:

@@ -5,12 +5,16 @@ This is the heart of NanoCoder.  The pattern is simple:
     user message -> LLM (with tools) -> tool calls? -> execute -> loop
                                       -> text reply? -> return to user
 
-It keeps looping until the LLM responds with plain text (no tool calls),
-which means it's done working and ready to report back.
+The loop is a LangGraph StateGraph (call_llm, then execute_tools, then back)
+so routing is explicit. Conversation history still lives on Agent.messages;
+the graph state only carries the round counter and whether this turn is done.
 """
 
 import concurrent.futures
 import inspect
+from typing import TypedDict
+
+from langgraph.graph import END, START, StateGraph
 
 from .context import ContextManager
 from .llm import LLM
@@ -20,6 +24,14 @@ from .tools import ALL_TOOLS
 from .tools.agent import AgentTool
 from .tools.base import Tool
 from .tools.todo import TodoWriteTool
+
+
+class _LoopState(TypedDict):
+    """Control state for one chat(). Messages stay on the Agent instance."""
+
+    rounds: int
+    has_tools: bool
+    final_response: str
 
 
 class Agent:
@@ -49,6 +61,30 @@ class Agent:
                 t._parent_agent = self
 
         self._todo = next((t for t in self.tools if isinstance(t, TodoWriteTool)), None)
+        self._on_token = None
+        self._on_tool = None
+        self._on_reasoning = None
+        self._pending_tool_calls = []
+        self.graph = self._build_graph()
+
+    def _build_graph(self):
+        """call_llm -> (tools? execute_tools -> call_llm : END).
+
+        The round limit is checked at the start of call_llm, matching the old
+        for-loop: the last allowed round still runs its tools, then the next
+        entry returns without another model call.
+        """
+        graph = StateGraph(_LoopState)
+        graph.add_node("call_llm", self._node_call_llm)
+        graph.add_node("execute_tools", self._node_execute_tools)
+        graph.add_edge(START, "call_llm")
+        graph.add_conditional_edges(
+            "call_llm",
+            self._route_after_llm,
+            {"execute_tools": "execute_tools", "end": END},
+        )
+        graph.add_edge("execute_tools", "call_llm")
+        return graph.compile()
 
     def _full_messages(self) -> list[dict]:
         system = self._system
@@ -69,59 +105,84 @@ class Agent:
 
     def chat(self, user_input: str, on_token=None, on_tool=None, on_reasoning=None) -> str:
         """Process one user message. May involve multiple LLM/tool rounds."""
+        self._on_token = on_token
+        self._on_tool = on_tool
+        self._on_reasoning = on_reasoning
         self.messages.append({"role": "user", "content": user_input})
         self.context.maybe_compress(self.messages, self.llm)
 
-        for _ in range(self.max_rounds):
-            resp = self.llm.chat(
-                messages=self._full_messages(),
-                tools=self._tool_schemas(),
-                on_token=on_token,
-                on_reasoning=on_reasoning,
-            )
+        # each LLM call and each tool batch is a step; the default limit of 25
+        # would cut off a long tool loop before max_rounds
+        final_state = self.graph.invoke(
+            {"rounds": 0, "has_tools": False, "final_response": ""},
+            {"recursion_limit": self.max_rounds * 2 + 5},
+        )
+        return final_state["final_response"]
 
-            # no tool calls -> LLM is done, return text
-            if not resp.tool_calls:
-                self.messages.append(resp.message)
-                return resp.content
+    def _node_call_llm(self, state: _LoopState) -> dict:
+        """One model turn. Stops before the call once max_rounds is spent."""
+        rounds = state["rounds"]
+        if rounds >= self.max_rounds:
+            return {
+                "rounds": rounds,
+                "has_tools": False,
+                "final_response": "(reached maximum tool-call rounds)",
+            }
 
-            # tool calls -> execute (parallel when multiple, like Claude Code's
-            # StreamingToolExecutor which runs independent tools concurrently)
+        resp = self.llm.chat(
+            messages=self._full_messages(),
+            tools=self._tool_schemas(),
+            on_token=self._on_token,
+            on_reasoning=self._on_reasoning,
+        )
+        rounds += 1
+
+        if not resp.tool_calls:
             self.messages.append(resp.message)
+            self._pending_tool_calls = []
+            return {"rounds": rounds, "has_tools": False, "final_response": resp.content}
 
-            try:
-                if len(resp.tool_calls) == 1:
-                    tc = resp.tool_calls[0]
-                    if on_tool:
-                        on_tool(tc.name, tc.arguments)
-                    result = self._pre_hooks(tc) or self._permit(tc)
-                    if result is None:
-                        result = self._exec_tool(tc)
-                        self._post_hooks(tc, result)
+        self.messages.append(resp.message)
+        self._pending_tool_calls = list(resp.tool_calls)
+        return {"rounds": rounds, "has_tools": True, "final_response": ""}
+
+    def _route_after_llm(self, state: _LoopState) -> str:
+        return "execute_tools" if state["has_tools"] else "end"
+
+    def _node_execute_tools(self, _state: _LoopState) -> dict:
+        """Run the pending tool batch, then compress, then loop back to the model."""
+        tool_calls = self._pending_tool_calls
+        try:
+            if len(tool_calls) == 1:
+                tc = tool_calls[0]
+                if self._on_tool:
+                    self._on_tool(tc.name, tc.arguments)
+                result = self._pre_hooks(tc) or self._permit(tc)
+                if result is None:
+                    result = self._exec_tool(tc)
+                    self._post_hooks(tc, result)
+                self.messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": result,
+                })
+            else:
+                # parallel execution for multiple tool calls
+                results = self._exec_tools_parallel(tool_calls, self._on_tool)
+                for tc, result in zip(tool_calls, results):
                     self.messages.append({
                         "role": "tool",
                         "tool_call_id": tc.id,
                         "content": result,
                     })
-                else:
-                    # parallel execution for multiple tool calls
-                    results = self._exec_tools_parallel(resp.tool_calls, on_tool)
-                    for tc, result in zip(resp.tool_calls, results):
-                        self.messages.append({
-                            "role": "tool",
-                            "tool_call_id": tc.id,
-                            "content": result,
-                        })
-            except KeyboardInterrupt:
-                # Ctrl+C mid-execution would leave the assistant tool_calls
-                # message without replies, poisoning the next request; backfill
-                self._answer_pending_tool_calls(resp.tool_calls)
-                raise
+        except KeyboardInterrupt:
+            # Ctrl+C mid-execution would leave the assistant tool_calls
+            # message without replies, poisoning the next request; backfill
+            self._answer_pending_tool_calls(tool_calls)
+            raise
 
-            # compress if tool outputs are big
-            self.context.maybe_compress(self.messages, self.llm)
-
-        return "(reached maximum tool-call rounds)"
+        self.context.maybe_compress(self.messages, self.llm)
+        return {}
 
     def _pre_hooks(self, tc) -> str | None:
         """PreToolUse hooks, fired before consent. A string return blocks the
