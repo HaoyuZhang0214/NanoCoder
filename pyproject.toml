@@ -33,6 +33,8 @@ dependencies = [
     "prompt_toolkit>=3.0",
     "python-dotenv>=1.0",
     "langgraph>=0.2.60",
+    "faiss-cpu>=1.7.4",
+    "numpy>=1.24",
 ]
 
 [tool.hatch.build.targets.wheel]

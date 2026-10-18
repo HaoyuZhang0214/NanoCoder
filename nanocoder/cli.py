@@ -62,15 +62,6 @@ def main():
         console.print("[red bold]No API key found.[/]")
         console.print(
             "Set one of: OPENAI_API_KEY, DEEPSEEK_API_KEY, or NANOCODER_API_KEY\n"
-            "\nExamples:\n"
-            "  # OpenAI\n"
-            "  export OPENAI_API_KEY=sk-...\n"
-            "\n"
-            "  # DeepSeek\n"
-            "  export OPENAI_API_KEY=sk-... OPENAI_BASE_URL=https://api.deepseek.com\n"
-            "\n"
-            "  # Ollama (local)\n"
-            "  export OPENAI_API_KEY=ollama OPENAI_BASE_URL=http://localhost:11434/v1 NANOCODER_MODEL=qwen2.5-coder\n"
         )
         sys.exit(1)
 

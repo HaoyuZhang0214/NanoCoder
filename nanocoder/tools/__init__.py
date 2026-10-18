@@ -2,6 +2,7 @@
 
 from .agent import AgentTool
 from .bash import BashTool
+from .codebase_search import CodebaseSearchTool
 from .edit import EditFileTool
 from .glob_tool import GlobTool
 from .grep import GrepTool
@@ -16,6 +17,7 @@ ALL_TOOLS = [
     EditFileTool(),
     GlobTool(),
     GrepTool(),
+    CodebaseSearchTool(),
     TodoWriteTool(),
     AgentTool(),
 ]
