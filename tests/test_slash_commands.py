@@ -3,7 +3,7 @@
 import nanocoder.session as session_module
 from nanocoder import Agent, checkpoints
 from nanocoder.demo import ScriptedLLM
-from nanocoder.llm import LLMResponse
+from nanocoder.common.types import LLMResponse
 from tests.conftest import repl_with
 
 

@@ -12,10 +12,10 @@ the graph state only carries the round counter and whether this turn is done.
 
 import concurrent.futures
 import inspect
-from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
+from .common.state import AgentState
 from .context import ContextManager
 from .llm import LLM
 from .permissions import Permission
@@ -25,13 +25,6 @@ from .tools.agent import AgentTool
 from .tools.base import Tool
 from .tools.todo import TodoWriteTool
 
-
-class _LoopState(TypedDict):
-    """Control state for one chat(). Messages stay on the Agent instance."""
-
-    rounds: int
-    has_tools: bool
-    final_response: str
 
 
 class Agent:
@@ -70,13 +63,14 @@ class Agent:
     def _build_graph(self):
         """call_llm -> (tools? execute_tools -> call_llm : END).
 
-        The round limit is checked at the start of call_llm, matching the old
-        for-loop: the last allowed round still runs its tools, then the next
+        The round limit is checked at the start of call_llm: 
+        the last allowed round still runs its tools, then the next
         entry returns without another model call.
         """
-        graph = StateGraph(_LoopState)
+        graph = StateGraph(AgentState)
         graph.add_node("call_llm", self._node_call_llm)
         graph.add_node("execute_tools", self._node_execute_tools)
+
         graph.add_edge(START, "call_llm")
         graph.add_conditional_edges(
             "call_llm",
@@ -84,6 +78,7 @@ class Agent:
             {"execute_tools": "execute_tools", "end": END},
         )
         graph.add_edge("execute_tools", "call_llm")
+        
         return graph.compile()
 
     def _full_messages(self) -> list[dict]:
@@ -119,7 +114,7 @@ class Agent:
         )
         return final_state["final_response"]
 
-    def _node_call_llm(self, state: _LoopState) -> dict:
+    def _node_call_llm(self, state: AgentState) -> dict:
         """One model turn. Stops before the call once max_rounds is spent."""
         rounds = state["rounds"]
         if rounds >= self.max_rounds:
@@ -146,10 +141,10 @@ class Agent:
         self._pending_tool_calls = list(resp.tool_calls)
         return {"rounds": rounds, "has_tools": True, "final_response": ""}
 
-    def _route_after_llm(self, state: _LoopState) -> str:
+    def _route_after_llm(self, state: AgentState) -> str:
         return "execute_tools" if state["has_tools"] else "end"
 
-    def _node_execute_tools(self, _state: _LoopState) -> dict:
+    def _node_execute_tools(self, _state: AgentState) -> dict:
         """Run the pending tool batch, then compress, then loop back to the model."""
         tool_calls = self._pending_tool_calls
         try:

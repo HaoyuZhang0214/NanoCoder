@@ -15,7 +15,7 @@ from nanocoder import mcp
 from nanocoder.agent import Agent
 from nanocoder.demo import ScriptedLLM
 from nanocoder.hooks import Hooks
-from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.common.types import LLMResponse, ToolCall
 from nanocoder.mcp import MCPError, load_mcp_tools
 from nanocoder.permissions import Permission
 from tests.conftest import repl_with

@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from nanocoder.agent import Agent
 from nanocoder.demo import ScriptedLLM
-from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.common.types import LLMResponse, ToolCall
 from nanocoder.tools.base import Tool
 
 

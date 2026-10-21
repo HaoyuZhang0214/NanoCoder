@@ -14,7 +14,7 @@ from rich.panel import Panel
 
 from .agent import Agent
 from .cli import _brief
-from .llm import LLMResponse, ToolCall
+from .common.types import LLMResponse, ToolCall
 
 console = Console()
 

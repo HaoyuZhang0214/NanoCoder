@@ -28,7 +28,7 @@ err_console = Console(stderr=True)
 def _parse_args():
     p = argparse.ArgumentParser(
         prog="nanocoder",
-        description="Minimal AI coding agent. Works with any OpenAI-compatible LLM.",
+        description="AI coding agent. Works with any OpenAI-compatible LLM.",
     )
     p.add_argument("-m", "--model", help="Model name (default: $NANOCODER_MODEL or gpt-5.5)")
     p.add_argument("--base-url", help="API base URL (default: $OPENAI_BASE_URL)")
@@ -185,6 +185,7 @@ def _repl(agent: Agent, config: Config):
     def _newline(event):
         event.current_buffer.insert_text("\n")
 
+    # main loop
     while True:
         try:
             user_input = pt_prompt(
@@ -197,20 +198,24 @@ def _repl(agent: Agent, config: Config):
         except (EOFError, KeyboardInterrupt):
             console.print("\nBye!")
             break
-
+        # empty input: skip
         if not user_input:
             continue
 
         # built-in commands
+        # /quit or /exit the REPL
         if user_input.lower() in ("quit", "exit", "/quit", "/exit"):
             break
+        # /help: show all commands
         if user_input == "/help":
             _show_help()
             continue
+        # /reset: clear conversation history
         if user_input == "/reset":
             agent.reset()
             console.print("[yellow]Conversation reset.[/yellow]")
             continue
+        # /plan: toggle plan mode
         if user_input == "/plan":
             agent.plan_mode = not agent.plan_mode
             if agent.plan_mode:
@@ -222,10 +227,12 @@ def _repl(agent: Agent, config: Config):
             else:
                 console.print("[yellow]Plan mode off.[/yellow]")
             continue
+        # /approve: approve if in plan mode
         if agent.plan_mode and user_input.lower() in ("approve", "/approve"):
             agent.plan_mode = False
             console.print("[yellow]Plan mode off.[/yellow]")
             user_input = "approve"  # the approval itself goes to the model, which then executes
+        # /tokens: show token usage
         if user_input == "/tokens":
             p = agent.llm.total_prompt_tokens
             c = agent.llm.total_completion_tokens
@@ -235,6 +242,7 @@ def _repl(agent: Agent, config: Config):
                 line += f"  (~${cost:.4f})"
             console.print(line)
             continue
+        # /model: switch model
         if user_input == "/model" or user_input.startswith("/model "):
             new_model = user_input[7:].strip() if user_input.startswith("/model ") else ""
             if new_model:
@@ -244,6 +252,7 @@ def _repl(agent: Agent, config: Config):
             else:
                 console.print(f"Current model: [cyan]{config.model}[/cyan]")
             continue
+        # /compact: compress conversation context
         if user_input == "/compact":
             from .context import estimate_tokens
             before = estimate_tokens(agent.messages)
@@ -254,11 +263,13 @@ def _repl(agent: Agent, config: Config):
             else:
                 console.print(f"[dim]Nothing to compress ({before} tokens, {len(agent.messages)} messages)[/dim]")
             continue
+        # /save: save session to disk
         if user_input == "/save":
             sid = save_session(agent.messages, config.model)
             console.print(f"[green]Session saved: {sid}[/green]")
             console.print(f"Resume with: nanocoder -r {sid}")
             continue
+        # /diff: show files modified this session
         if user_input == "/diff":
             from .tools.edit import _changed_files
             if not _changed_files:
@@ -268,6 +279,7 @@ def _repl(agent: Agent, config: Config):
                 for f in sorted(_changed_files):
                     console.print(f"  [cyan]{f}[/cyan]")
             continue
+        # /undo: revert the most recent file change
         if user_input == "/undo":
             from .checkpoints import pending, undo
             console.print(undo())
@@ -275,6 +287,7 @@ def _repl(agent: Agent, config: Config):
             if left:
                 console.print(f"[dim]{left} more checkpoint(s) on the stack.[/dim]")
             continue
+        # /sessions: list saved sessions
         if user_input == "/sessions":
             sessions = list_sessions()
             if not sessions:
@@ -283,6 +296,7 @@ def _repl(agent: Agent, config: Config):
                 for s in sessions:
                     console.print(f"  [cyan]{s['id']}[/cyan] ({s['model']}, {s['saved_at']}) {s['preview']}")
             continue
+        # /mcp: manage MCP servers
         if user_input == "/mcp" or user_input.startswith("/mcp "):
             _mcp(user_input[4:].strip())
             continue
@@ -307,7 +321,7 @@ def _repl(agent: Agent, config: Config):
             # newline logic below still fires even if the reply itself is empty
             streamed.append(tok)
             console.print(f"[dim]{tok}[/dim]", end="")
-
+        
         try:
             response = agent.chat(user_input, on_token=on_token, on_tool=on_tool,
                                   on_reasoning=on_reasoning)

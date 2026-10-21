@@ -5,7 +5,7 @@ import logging
 from nanocoder import Agent
 from nanocoder.demo import ScriptedLLM
 from nanocoder.hooks import Hooks, load_hooks
-from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.common.types import LLMResponse, ToolCall
 from nanocoder.permissions import Permission
 from nanocoder.tools.agent import AgentTool
 from nanocoder.tools.write import WriteFileTool

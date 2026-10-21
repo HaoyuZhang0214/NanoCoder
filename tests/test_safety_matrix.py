@@ -14,7 +14,7 @@ import pytest
 from nanocoder import Agent
 from nanocoder.demo import ScriptedLLM
 from nanocoder.hooks import Hooks
-from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.common.types import LLMResponse, ToolCall
 from nanocoder.permissions import Permission
 from nanocoder.tools.base import Tool
 from nanocoder.tools.grep import GrepTool

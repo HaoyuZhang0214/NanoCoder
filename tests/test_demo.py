@@ -3,7 +3,7 @@
 import pytest
 
 from nanocoder.demo import ScriptedLLM, _script, run_demo
-from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.common.types import LLMResponse, ToolCall
 
 
 def test_scripted_llm_plays_turns_in_order():

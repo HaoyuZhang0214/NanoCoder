@@ -22,7 +22,7 @@ from nanocoder.agent import Agent
 from nanocoder.cli import _brief
 from nanocoder.demo import ScriptedLLM
 from nanocoder.hooks import Hooks
-from nanocoder.llm import LLMResponse, ToolCall
+from nanocoder.common.types import LLMResponse, ToolCall
 
 console = Console()
 

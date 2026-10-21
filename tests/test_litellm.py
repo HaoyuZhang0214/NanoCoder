@@ -6,7 +6,8 @@ from unittest import mock
 import pytest
 
 from nanocoder.config import Config
-from nanocoder.llm import LLM, LiteLLM, LLMResponse
+from nanocoder.common.types import LLMResponse
+from nanocoder.llm import LLM, LiteLLM
 
 # ---------------------------------------------------------------------------
 # Fake streaming response (matches OpenAI stream chunk format)
