@@ -1,8 +1,8 @@
-"""Sub-agent spawning (inspired by Claude Code's AgentTool, 1397 lines).
+"""Sub-agent spawning.
 
 The idea: for complex sub-tasks, spawn an independent agent with its own
 conversation history and tool access. This lets the main agent delegate
-work like "go research this codebase and report back" without polluting
+work like "go research this semantic and report back" without polluting
 its own context window.
 
 The sub-agent runs to completion and returns a text summary.
@@ -14,11 +14,13 @@ from .base import Tool
 
 
 class AgentTool(Tool):
+    """Spawn a sub-agent to handle a complex sub-task independently."""
+
     name = "agent"
     description = (
         "Spawn a sub-agent to handle a complex sub-task independently. "
         "The sub-agent has its own context and tool access. Use this for: "
-        "researching a codebase, implementing a multi-step change in isolation, "
+        "researching a semantic, implementing a multi-step change in isolation, "
         "or any task that would benefit from a fresh context window."
     )
     parameters: ClassVar[dict] = {

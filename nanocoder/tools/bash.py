@@ -1,6 +1,5 @@
 """Shell command execution with safety checks.
 
-Claude Code's BashTool is 1,143 lines. This is the distilled version:
 - Output capture with truncation (head+tail preserved)
 - Timeout support
 - Dangerous command detection
@@ -16,7 +15,7 @@ from typing import ClassVar
 from ..shell import run_shell
 from .base import Tool
 
-# Track cwd across commands (Claude Code does this too). Thread-local, so that
+# Track cwd across commands. Thread-local, so that
 # when the agent executes tools in parallel two bash calls never race on one
 # shared global: each worker thread carries its own cwd. See article 05.
 _local = threading.local()
@@ -54,6 +53,9 @@ _DANGEROUS_PATTERNS = [
 
 
 class BashTool(Tool):
+    """Execute a shell command. Returns stdout, stderr, and exit code. 
+    Use this for running tests, installing packages, git operations, etc."""
+    
     name = "bash"
     description = (
         "Execute a shell command. Returns stdout, stderr, and exit code. "

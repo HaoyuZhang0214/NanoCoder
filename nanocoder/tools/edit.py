@@ -1,4 +1,4 @@
-"""Search-and-replace file editing (Claude Code's key innovation).
+"""Search-and-replace file editing.
 
 The core idea: instead of sending whole-file rewrites or line-number patches,
 the LLM specifies an *exact* substring to find and its replacement. The
@@ -18,6 +18,10 @@ _changed_files: set[str] = set()
 
 
 class EditFileTool(Tool):
+    """Edit a file by replacing an exact string match.
+    old_string must appear exactly once in the file for safety.
+    Include enough surrounding context to ensure uniqueness."""
+    
     name = "edit_file"
     description = (
         "Edit a file by replacing an exact string match. "

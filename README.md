@@ -36,7 +36,7 @@ OPENAI_API_KEY=sk-...
 OPENAI_BASE_URL=https://api.openai.com/v1   # 兼容网关务必带 /v1
 NANOCODER_MODEL=gpt-4o-mini                 # 或 deepseek-chat 等
 # NANOCODER_PROVIDER=litellm                # 可选：走 LiteLLM
-# NANOCODER_EMBED_MODEL=text-embedding-3-small  # codebase_search 用
+# NANOCODER_EMBED_MODEL=text-embedding-3-small  # semantic_search 用
 ```
 
 也可用 `NANOCODER_API_KEY` / `DEEPSEEK_API_KEY` 代替 `OPENAI_API_KEY`。
@@ -123,7 +123,7 @@ NANOCODER_MODEL=gpt-4o-mini                 # 或 deepseek-chat 等
   → 结果写入 messages，回到 call_llm
 ```
 
-**只读工具**（无需确认）：`read_file`、`glob`、`grep`、`codebase_search`、`todo_write`  
+**只读工具**（无需确认）：`read_file`、`glob`、`grep`、`semantic_search`、`todo_write`  
 **改动类工具**（默认询问）：`write_file`、`edit_file`、`bash`、`agent`（子 Agent）、以及 MCP 工具
 
 「始终允许」会记到 `~/.nanocoder/permissions.json`。
@@ -137,7 +137,7 @@ NANOCODER_MODEL=gpt-4o-mini                 # 或 deepseek-chat 等
 | `bash` | 跑 shell；危险命令闸；追踪 `cd` |
 | `read_file` / `write_file` / `edit_file` | 读、写、唯一匹配搜索替换 |
 | `glob` / `grep` | 按文件名 / 内容搜索 |
-| `codebase_search` | AST 分块 + FAISS 稠密 + BM25 + RRF 混合检索 |
+| `semantic_search` | AST 分块 + FAISS 稠密 + BM25 + RRF 混合检索 |
 | `todo_write` | Agent 自维护任务清单（每轮注入 system） |
 | `agent` | 派生子 Agent 做子任务 |
 
@@ -162,7 +162,7 @@ nanocoder/
 ├── mcp.py           MCP stdio 客户端与 reconnect
 ├── session.py       会话存盘 / 续聊
 ├── checkpoints.py   文件改动快照与 /undo
-├── retrieval.py     代码索引与混合检索（codebase_search）
+├── retrieval.py     代码索引与混合检索（semantic_search）
 ├── shell.py         POSIX shell 路由（Windows 走 Git Bash）
 ├── demo.py          离线脚本演示
 └── tools/           上表各工具实现 + base.Tool

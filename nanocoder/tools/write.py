@@ -9,6 +9,8 @@ from .edit import _changed_files
 
 
 class WriteFileTool(Tool):
+    """Create a new file or completely overwrite an existing one."""
+
     name = "write_file"
     description = (
         "Create a new file or completely overwrite an existing one. "

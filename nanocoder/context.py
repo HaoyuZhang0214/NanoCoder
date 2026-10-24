@@ -167,11 +167,9 @@ class ContextManager:
                         {
                             "role": "system",
                             "content": (
-                                "Compress this conversation into a brief summary. "
-                                "Preserve: file paths edited, key decisions made, "
-                                "errors encountered, current task state. "
-                                "Drop: verbose command output, code listings, "
-                                "redundant back-and-forth."
+                                "将本对话压缩为摘要。"
+                                "保留被编辑的文件路径和关键决策，遇到的错误和当前任务状态。"
+                                "丢弃详细的命令输出、代码列表和冗余的来回的废话。"
                             ),
                         },
                         {"role": "user", "content": flat[:15000]},

@@ -2,9 +2,9 @@
 
 from .agent import AgentTool
 from .bash import BashTool
-from .codebase_search import CodebaseSearchTool
+from .semantic_search import SemanticSearchTool
 from .edit import EditFileTool
-from .glob_tool import GlobTool
+from .glob import GlobTool
 from .grep import GrepTool
 from .read import ReadFileTool
 from .todo import TodoWriteTool
@@ -17,7 +17,7 @@ ALL_TOOLS = [
     EditFileTool(),
     GlobTool(),
     GrepTool(),
-    CodebaseSearchTool(),
+    SemanticSearchTool(),
     TodoWriteTool(),
     AgentTool(),
 ]

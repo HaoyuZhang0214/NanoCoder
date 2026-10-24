@@ -7,8 +7,10 @@ from ..retrieval import format_hits, get_index
 from .base import Tool
 
 
-class CodebaseSearchTool(Tool):
-    name = "codebase_search"
+class SemanticSearchTool(Tool):
+    """Locate relevant Python functions/classes with hybrid retrieval."""
+
+    name = "semantic_search"
     description = (
         "Locate relevant Python functions/classes with hybrid retrieval "
         "(FAISS semantic search + BM25 keyword search). Use when you do not "

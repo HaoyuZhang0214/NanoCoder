@@ -1,6 +1,6 @@
 """User consent for tool calls, distilled from Claude Code's permissions.
 
-The tools split in two. Read-only ones (read_file, glob, grep, codebase_search,
+The tools split in two. Read-only ones (read_file, glob, grep, semantic_search,
 todo_write) run the moment the model asks; the mutating ones (edit_file,
 write_file, bash, and spawning a sub-agent) stop for a yes first. "Always allow" is
 remembered per tool, and the REPL passes a persist_path so the grant also
@@ -24,7 +24,7 @@ class Permission:
     """Session-scoped consent state. No prompts itself: the CLI hands in
     `ask`, and the only I/O is the optional always-allow store."""
 
-    READ_ONLY = frozenset({"read_file", "glob", "grep", "codebase_search", "todo_write"})
+    READ_ONLY = frozenset({"read_file", "glob", "grep", "semantic_search", "todo_write"})
 
     def __init__(self, ask=None, allow_all: bool = False, persist_path: Path | None = None):
         # ask(tool_name, arguments) -> "once" | "always" | "deny"

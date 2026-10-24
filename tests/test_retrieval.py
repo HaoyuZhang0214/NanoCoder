@@ -1,4 +1,4 @@
-"""AST chunking, BM25, FAISS hybrid search, and codebase_search tool."""
+"""AST chunking, BM25, FAISS hybrid search, and semantic_search tool."""
 
 from pathlib import Path
 
@@ -13,7 +13,7 @@ from nanocoder.retrieval import (
     rrf_fuse,
     tokenize,
 )
-from nanocoder.tools.codebase_search import CodebaseSearchTool
+from nanocoder.tools.semantic_search import SemanticSearchTool
 
 
 def _hash_embedder(dim: int = 32):
@@ -133,23 +133,23 @@ def test_incremental_index_reembeds_only_changed_file(tmp_path):
     assert any(c.symbol == "beta_unique_symbol" for c in index2.chunks)
 
 
-def test_codebase_search_tool_returns_paths_and_lines(tmp_path):
+def test_semantic_search_tool_returns_paths_and_lines(tmp_path):
     (tmp_path / "pay.py").write_text(
         "def charge_card(amount):\n"
         "    '''Bill the customer card for amount.'''\n"
         "    return amount\n",
         encoding="utf-8",
     )
-    tool = CodebaseSearchTool(embedder=_hash_embedder(), cache_root=tmp_path / ".idx")
+    tool = SemanticSearchTool(embedder=_hash_embedder(), cache_root=tmp_path / ".idx")
     out = tool.execute("charge card billing", path=str(tmp_path), top_k=3)
     assert "charge_card" in out
     assert "pay.py" in out
     assert ":" in out  # path:lines
 
 
-def test_codebase_search_is_read_only():
-    assert "codebase_search" in Permission.READ_ONLY
-    assert Permission(allow_all=False).check("codebase_search", {"query": "x"}) is None
+def test_semantic_search_is_read_only():
+    assert "semantic_search" in Permission.READ_ONLY
+    assert Permission(allow_all=False).check("semantic_search", {"query": "x"}) is None
 
 
 def test_chunk_tree_skips_venv_dirs(tmp_path):

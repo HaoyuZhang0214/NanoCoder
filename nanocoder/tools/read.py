@@ -7,6 +7,8 @@ from .base import Tool
 
 
 class ReadFileTool(Tool):
+    """Read a file's contents with line numbers."""
+    
     name = "read_file"
     description = (
         "Read a file's contents with line numbers. "

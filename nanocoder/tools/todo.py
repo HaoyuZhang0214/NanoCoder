@@ -1,4 +1,4 @@
-"""The agent's own task list (Claude Code's TodoWrite pattern).
+"""The agent's own task list.
 
 For multi-step work the agent writes the whole checklist at once, then
 rewrites it as tasks move from pending to in_progress to done.  The list
@@ -20,6 +20,8 @@ _VALID_STATUS = ("pending", "in_progress", "done")
 
 
 class TodoWriteTool(Tool):
+    """Manage the session task checklist."""
+    
     name = "todo_write"
     description = (
         "Manage the session task checklist. Pass the complete list every time; it fully "

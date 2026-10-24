@@ -7,6 +7,8 @@ from .base import Tool
 
 
 class GlobTool(Tool):
+    """Find files matching a glob pattern."""
+    
     name = "glob"
     description = (
         "Find files matching a glob pattern. "
