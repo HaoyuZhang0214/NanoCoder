@@ -32,6 +32,12 @@ class Config:
     temperature: float = 0.0
     max_context_tokens: int = 128_000
     provider: str = "openai"
+    # bash sandbox: none (host) | docker (explicit opt-in)
+    sandbox: str = "none"
+    sandbox_image: str = "python:3.12-slim"
+    sandbox_network: str = "bridge"  # bridge (online) | none
+    sandbox_memory: str = "2g"
+    sandbox_cpus: str = "2"
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -44,6 +50,12 @@ class Config:
             or os.getenv("DEEPSEEK_API_KEY")
             or ""
         )
+        sandbox = (os.getenv("NANOCODER_SANDBOX") or "none").strip().lower()
+        if sandbox not in ("none", "docker"):
+            sandbox = "none"
+        network = (os.getenv("NANOCODER_SANDBOX_NETWORK") or "bridge").strip().lower()
+        if network not in ("bridge", "none"):
+            network = "bridge"
         return cls(
             model=os.getenv("NANOCODER_MODEL", "gpt-5.5"),
             api_key=api_key,
@@ -52,4 +64,9 @@ class Config:
             temperature=float(os.getenv("NANOCODER_TEMPERATURE", "0")),
             max_context_tokens=int(os.getenv("NANOCODER_MAX_CONTEXT", "128000")),
             provider=os.getenv("NANOCODER_PROVIDER", "openai"),
+            sandbox=sandbox,
+            sandbox_image=os.getenv("NANOCODER_SANDBOX_IMAGE", "python:3.12-slim"),
+            sandbox_network=network,
+            sandbox_memory=os.getenv("NANOCODER_SANDBOX_MEMORY", "2g"),
+            sandbox_cpus=os.getenv("NANOCODER_SANDBOX_CPUS", "2"),
         )

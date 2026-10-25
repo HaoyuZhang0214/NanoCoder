@@ -53,6 +53,7 @@ NANOCODER_MODEL=gpt-4o-mini                 # 或 deepseek-chat 等
 | `nanocoder --demo` | 离线脚本演示，无需 API Key |
 | `nanocoder -r <session_id>` | 恢复已保存会话 |
 | `nanocoder -m <model> --base-url <url>` | CLI 覆盖环境变量 |
+| `nanocoder --sandbox docker` | bash 在 Docker 容器内执行（需本机 Docker） |
 
 ### 3. REPL 斜杠命令
 
@@ -128,6 +129,26 @@ NANOCODER_MODEL=gpt-4o-mini                 # 或 deepseek-chat 等
 
 「始终允许」会记到 `~/.nanocoder/permissions.json`。
 
+### Docker 沙箱（可选）
+
+默认 bash 仍在**宿主机**执行。显式开启后，仅 `bash` 进入会话级 Docker 容器；`read` / `write` / `edit` 等文件工具与 hooks 仍在宿主机（工作区 bind-mount 到容器 `/workspace`，两边看到同一目录）。
+
+```bash
+nanocoder --sandbox docker
+# 或
+NANOCODER_SANDBOX=docker nanocoder
+```
+
+| 项 | 说明 |
+|----|------|
+| 启用 | `--sandbox docker` 或 `NANOCODER_SANDBOX=docker`（默认 `none`） |
+| 网络 | 默认 `bridge`（可联网）；`--sandbox-network none` 禁止出站 |
+| 镜像 | `NANOCODER_SANDBOX_IMAGE`（默认 `python:3.12-slim`） |
+| 限额 | `NANOCODER_SANDBOX_MEMORY` / `NANOCODER_SANDBOX_CPUS`（默认 `2g` / `2`） |
+| 安全默认 | `--read-only` 根 FS、工作区可写、`tmpfs /tmp`、`--cap-drop ALL`、`no-new-privileges`、非 root、pids 限制；不继承宿主完整环境（避免 API Key 进容器） |
+
+依赖本机 `docker` CLI；不可用时启动失败并提示。容器在会话结束时清理。危险命令正则与 Permission / plan mode 仍然生效。
+
 ---
 
 ## 内置工具
@@ -164,6 +185,7 @@ nanocoder/
 ├── checkpoints.py   文件改动快照与 /undo
 ├── retrieval.py     代码索引与混合检索（semantic_search）
 ├── shell.py         POSIX shell 路由（Windows 走 Git Bash）
+├── sandbox.py       可选 Docker bash 沙箱（会话级容器）
 ├── demo.py          离线脚本演示
 └── tools/           上表各工具实现 + base.Tool
 ```
@@ -178,6 +200,7 @@ nanocoder/
 | Checkpoints | 写文件前快照，`/undo` 回滚最近一次 |
 | 会话 | `/save` 到磁盘，`-r` 或 `/sessions` 恢复 |
 | 检索 | 增量索引缓存在 `~/.nanocoder/code_index` |
+| Docker 沙箱 | `--sandbox docker`：bash 进容器，文件工具仍在宿主机 |
 
 用户级配置目录：`~/.nanocoder/`（`permissions.json`、`hooks.json`、`mcp.json`、会话、代码索引）。
 

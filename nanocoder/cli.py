@@ -1,6 +1,7 @@
 """Interactive REPL - the user-facing terminal interface."""
 
 import argparse
+import atexit
 import os
 import sys
 
@@ -18,8 +19,10 @@ from .hooks import load_hooks
 from .llm import LLM, LiteLLM
 from .mcp import load_mcp_tools
 from .permissions import DEFAULT_STORE, Permission
+from .sandbox import DockerSandbox, SandboxConfig, SandboxError, check_docker
 from .session import list_sessions, load_session, save_session
 from .tools import ALL_TOOLS
+from .tools.bash import BashTool
 
 console = Console()
 err_console = Console(stderr=True)
@@ -37,8 +40,30 @@ def _parse_args():
     p.add_argument("--yes", action="store_true", help="Auto-approve every tool call (for scripts and CI)")
     p.add_argument("--demo", action="store_true", help="Run the offline scripted demo (no API key needed)")
     p.add_argument("-r", "--resume", metavar="ID", help="Resume a saved session")
+    p.add_argument(
+        "--sandbox",
+        choices=("none", "docker"),
+        help="Bash isolation: none (host, default) or docker (requires Docker CLI)",
+    )
+    p.add_argument(
+        "--sandbox-network",
+        choices=("bridge", "none"),
+        help="Docker sandbox network (default: bridge / online; none = no egress)",
+    )
     p.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
     return p.parse_args()
+
+
+def _build_tools(sandbox: DockerSandbox | None = None):
+    """Copy builtin tools; swap bash for a sandboxed runner when requested."""
+    tools = []
+    for t in ALL_TOOLS:
+        if sandbox is not None and t.name == "bash":
+            tools.append(BashTool(runner=sandbox))
+        else:
+            tools.append(t)
+    tools.extend(load_mcp_tools())
+    return tools
 
 
 def main():
@@ -57,6 +82,10 @@ def main():
         config.base_url = args.base_url
     if args.api_key:
         config.api_key = args.api_key
+    if args.sandbox is not None:
+        config.sandbox = args.sandbox
+    if args.sandbox_network is not None:
+        config.sandbox_network = args.sandbox_network
 
     if not config.api_key:
         console.print("[red bold]No API key found.[/]")
@@ -64,6 +93,24 @@ def main():
             "Set one of: OPENAI_API_KEY, DEEPSEEK_API_KEY, or NANOCODER_API_KEY\n"
         )
         sys.exit(1)
+
+    sandbox = None
+    if config.sandbox == "docker":
+        try:
+            check_docker()
+            sandbox = DockerSandbox(
+                SandboxConfig(
+                    workspace_root=os.getcwd(),
+                    image=config.sandbox_image,
+                    network=config.sandbox_network,
+                    memory=config.sandbox_memory,
+                    cpus=config.sandbox_cpus,
+                )
+            )
+            atexit.register(sandbox.close)
+        except SandboxError as e:
+            console.print(f"[red bold]Sandbox unavailable:[/] {e}")
+            sys.exit(1)
 
     llm_cls = LiteLLM if config.provider == "litellm" else LLM
     llm = llm_cls(
@@ -82,33 +129,37 @@ def main():
         permission = Permission(ask=_ask_permission, persist_path=DEFAULT_STORE)
     agent = Agent(
         llm=llm,
-        tools=[*ALL_TOOLS, *load_mcp_tools()],
+        tools=_build_tools(sandbox),
         max_context_tokens=config.max_context_tokens,
         permission=permission,
         hooks=load_hooks(),
     )
 
-    # resume saved session
-    if args.resume:
-        loaded = load_session(args.resume)
-        if loaded:
-            agent.messages, loaded_model = loaded
-            # restore the model from the saved session unless overridden by CLI
-            if not args.model:
-                agent.llm.model = loaded_model
-                config.model = loaded_model
-            console.print(f"[green]Resumed session: {args.resume} (model: {agent.llm.model})[/green]")
-        else:
-            console.print(f"[red]Session '{args.resume}' not found.[/red]")
-            sys.exit(1)
+    try:
+        # resume saved session
+        if args.resume:
+            loaded = load_session(args.resume)
+            if loaded:
+                agent.messages, loaded_model = loaded
+                # restore the model from the saved session unless overridden by CLI
+                if not args.model:
+                    agent.llm.model = loaded_model
+                    config.model = loaded_model
+                console.print(f"[green]Resumed session: {args.resume} (model: {agent.llm.model})[/green]")
+            else:
+                console.print(f"[red]Session '{args.resume}' not found.[/red]")
+                sys.exit(1)
 
-    # one-shot mode
-    if args.prompt:
-        _run_once(agent, args.prompt)
-        return
+        # one-shot mode
+        if args.prompt:
+            _run_once(agent, args.prompt)
+            return
 
-    # interactive REPL
-    _repl(agent, config)
+        # interactive REPL
+        _repl(agent, config)
+    finally:
+        if sandbox is not None:
+            sandbox.close()
 
 
 def _ask_permission(tool_name: str, arguments: dict) -> str:
@@ -159,11 +210,18 @@ def _repl(agent: Agent, config: Config):
     perm = agent.permission
     mode = "auto-approve every tool call (--yes)" if (perm and perm.allow_all) else "ask before mutating tools"
     mcp_count = sum(1 for t in agent.tools if t.name.startswith("mcp__"))
+    sandbox_line = ""
+    if config.sandbox == "docker":
+        sandbox_line = (
+            f"\nSandbox: [cyan]docker[/cyan] "
+            f"(image=[dim]{config.sandbox_image}[/dim], network=[dim]{config.sandbox_network}[/dim])"
+        )
     console.print(Panel(
         f"[bold]nanocoder[/bold] v{__version__}\n"
         f"Model: [cyan]{config.model}[/cyan]"
         + (f"  Base: [dim]{config.base_url}[/dim]" if config.base_url else "")
         + f"\nPermissions: [cyan]{mode}[/cyan]"
+        + sandbox_line
         + (f"\nHooks: [cyan]{len(agent.hooks.pre)} pre, {len(agent.hooks.post)} post[/cyan]"
            " from ~/.nanocoder/hooks.json" if agent.hooks else "")
         + (f"\nMCP: [cyan]{mcp_count} tools[/cyan] from ~/.nanocoder/mcp.json" if mcp_count else "")

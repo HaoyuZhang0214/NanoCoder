@@ -12,7 +12,7 @@ import subprocess
 import threading
 from typing import ClassVar
 
-from ..shell import run_shell
+from ..sandbox import HostRunner
 from .base import Tool
 
 # Track cwd across commands. Thread-local, so that
@@ -76,6 +76,10 @@ class BashTool(Tool):
         "required": ["command"],
     }
 
+    def __init__(self, runner=None):
+        # HostRunner by default; CLI injects DockerSandbox when --sandbox docker
+        self._runner = runner if runner is not None else HostRunner()
+
     def execute(self, command: str, timeout: int = 120) -> str:
         # safety check
         warning = _check_dangerous(command)
@@ -86,7 +90,7 @@ class BashTool(Tool):
         cwd = get_tracked_cwd() or os.getcwd()
 
         try:
-            proc = run_shell(
+            proc = self._runner.run(
                 command,
                 check=False,
                 capture_output=True,
