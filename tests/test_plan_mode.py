@@ -63,13 +63,13 @@ def test_read_only_tools_still_run_in_plan_mode(tmp_path):
 def test_system_prompt_gains_the_plan_section_only_while_on():
     agent = Agent(llm=ScriptedLLM([]))
 
-    assert "# 计划模式" not in agent._full_messages()[0]["content"]
+    assert "# Plan Mode" not in agent._full_messages()[0]["content"]
     agent.plan_mode = True
     system = agent._full_messages()[0]["content"]
-    assert "# 计划模式" in system
+    assert "# Plan Mode" in system
     assert "编号列表" in system
     agent.plan_mode = False
-    assert "# 计划模式" not in agent._full_messages()[0]["content"]
+    assert "# Plan Mode" not in agent._full_messages()[0]["content"]
 
 
 def test_plan_slash_command_toggles(monkeypatch):
